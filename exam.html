@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>AIT Revision Exam System</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial;
+      background: #0f172a;
+      color: white;
+    }
+
+    .banner {
+      background: #1e293b;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    .container {
+      padding: 20px;
+    }
+
+    select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    .question {
+      background: #1e293b;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .result {
+      background: #111827;
+      padding: 15px;
+      margin-top: 20px;
+      border-radius: 10px;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="banner">
+  AIT Revision Exam System (20 Questions per Course)
+</div>
+
+<div class="container">
+
+  <select id="course">
+    <option value="">Select Course</option>
+    <option value="frontend">Frontend Development</option>
+    <option value="admin">Admin Technology AI</option>
+    <option value="logo">Logo Design</option>
+    <option value="construction">Construction Technology</option>
+  </select>
+
+  <button onclick="loadExam()">Start Revision</button>
+
+  <div id="examBox"></div>
+
+  <button class="hidden" id="submitBtn" onclick="submitExam()">Submit Revision</button>
+
+  <div id="resultBox"></div>
+
+</div>
+
+<script>
+
+let answers = {};
+let questions = [];
+
+/* =========================
+   REVISION QUESTION BANK (TRICKY ONLY)
+========================= */
+
+const bank = {
+
+frontend: [
+  {q:"What does <p> tag do in HTML?", o:["Creates paragraph","Adds image","Links page","Runs script"], a:"Creates paragraph"},
+  {q:"CSS Flexbox is used for?", o:["Layout alignment","Database","AI","Server"], a:"Layout alignment"},
+  {q:"JS is mainly used for?", o:["Logic & interaction","Styling","Structure","Database"], a:"Logic & interaction"},
+  {q:"Media queries help with?", o:["Responsive design","Security","Backend","Database"], a:"Responsive design"},
+  {q:"Which tag loads image?", o:["<img>","<pic>","<image>","<src>"], a:"<img>"},
+
+  {q:"What does DOM stand for?", o:["Document Object Model","Data Object Model","Design Object Module","Digital Output Model"], a:"Document Object Model"},
+  {q:"Which makes layout flexible?", o:["Flexbox","Font","Color","Margin"], a:"Flexbox"},
+  {q:"JS runs in?", o:["Browser","Server only","Database","Printer"], a:"Browser"},
+  {q:"CSS controls?", o:["Design","Logic","Database","Backend"], a:"Design"},
+  {q:"HTML is for?", o:["Structure","Style","Logic","AI"], a:"Structure"},
+
+  {q:"viewport tag is for?", o:["Responsive scaling","Speed","Security","Storage"], a:"Responsive scaling"},
+  {q:"Which is correct JS keyword?", o:["let","define","create","varname"], a:"let"},
+  {q:"CSS file ends with?", o:[".css",".html",".js",".style"], a:".css"},
+  {q:"onclick is?", o:["Event","Style","Tag","Loop"], a:"Event"},
+  {q:"<a> tag is for?", o:["Links","Images","Paragraph","Tables"], a:"Links"},
+
+  {q:"Grid system helps?", o:["Layout","AI","Database","Server"], a:"Layout"},
+  {q:"HTML stands for?", o:["HyperText Markup Language","Home Tool Markup Language","High Text Machine","Hyper Transfer"], a:"HyperText Markup Language"},
+  {q:"CSS means?", o:["Cascading Style Sheets","Creative Style System","Computer Style Sheet","Color System"], a:"Cascading Style Sheets"},
+  {q:"JS means?", o:["JavaScript","Java Source","Just Script","JSON Style"], a:"JavaScript"},
+  {q:"Flexbox aligns?", o:["Items","Files","Database","Server"], a:"Items"}
+],
+
+admin: [
+  {q:"Copilot is used for?", o:["AI assistance","Gaming","Music","Printing"], a:"AI assistance"},
+  {q:"Excel is used for?", o:["Calculations","Design","Music","Video"], a:"Calculations"},
+  {q:"Word is for?", o:["Documents","Games","AI","Server"], a:"Documents"},
+  {q:"Gmail is?", o:["Email","Chat","AI","Storage"], a:"Email"},
+  {q:"AI ethics means?", o:["Responsible use","Gaming","Hacking","Editing"], a:"Responsible use"},
+
+  {q:"Bias in AI is?", o:["Unfair output","Speed","Storage","Design"], a:"Unfair output"},
+  {q:"Budget is?", o:["Money plan","Game","AI","File"], a:"Money plan"},
+  {q:"Report is?", o:["Information doc","Game","Music","AI"], a:"Information doc"},
+  {q:"Spreadsheet tool?", o:["Excel","Word","Paint","Chrome"], a:"Excel"},
+  {q:"Email attachment is?", o:["File sent","Deleted file","Game","Text"], a:"File sent"},
+
+  {q:"Copilot improves?", o:["Productivity","Gaming","Music","Video"], a:"Productivity"},
+  {q:"AI helps with?", o:["Automation","Cooking","Driving","Music"], a:"Automation"},
+  {q:"Confidential means?", o:["Private","Public","Open","Shared"], a:"Private"},
+  {q:"Financial planning helps?", o:["Control money","Lose money","Ignore money","Spend blindly"], a:"Control money"},
+  {q:"Excel formula SUM does?", o:["Adds numbers","Deletes","Moves","Copies"], a:"Adds numbers"},
+
+  {q:"Data entry means?", o:["Input info","Delete info","Hide info","Design"], a:"Input info"},
+  {q:"Ethical AI avoids?", o:["Harm","Help","Speed","Design"], a:"Harm"},
+  {q:"Word header is?", o:["Top page","Bottom","Middle","Side"], a:"Top page"},
+  {q:"AI tool example?", o:["ChatGPT","Paint","Excel","Folder"], a:"ChatGPT"},
+  {q:"Communication tool?", o:["Email","Game","Code","AI"], a:"Email"}
+]
+
+};
+
+/* =========================
+   LOAD EXAM
+========================= */
+
+function loadExam(){
+  let course = document.getElementById("course").value;
+
+  if(!course){
+    alert("Select a course");
+    return;
+  }
+
+  questions = bank[course];
+
+  let html = "";
+
+  questions.forEach((q,i)=>{
+    html += `
+      <div class="question">
+        ${i+1}. ${q.q}<br>
+        ${q.o.map(o=>`
+          <label>
+            <input type="radio" name="q${i}" onclick="answers['q${i}']='${o}'">
+            ${o}
+          </label><br>
+        `).join("")}
+      </div>
+    `;
+  });
+
+  document.getElementById("examBox").innerHTML = html;
+  document.getElementById("submitBtn").classList.remove("hidden");
+}
+
+/* =========================
+   SUBMIT REVISION
+========================= */
+
+function submitExam(){
+
+  let score = 0;
+
+  questions.forEach((q,i)=>{
+    if(answers["q"+i] === q.a) score++;
+  });
+
+  let percentage = (score / questions.length) * 100;
+
+  document.getElementById("resultBox").innerHTML = `
+    <div class="result">
+      <h3>Revision Result</h3>
+      Score: ${score}/${questions.length}<br>
+      Percentage: ${percentage.toFixed(1)}%<br><br>
+
+      <b>This is a revision system — focus on learning your weak areas.</b>
+    </div>
+  `;
+}
+
+</script>
+
+</body>
+</html>
